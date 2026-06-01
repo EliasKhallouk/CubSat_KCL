@@ -246,15 +246,42 @@ app.get('/app', (req, res) => {
 
     async function loadBackofficeData() {
       try {
-        const [sats, stations] = await Promise.all([
-          fetch('/api/back/satellites-operationnels').then(r => r.json()),
-          fetch('/api/back/stations-actives').then(r => r.json())
+        console.log('Chargement données back-office...');
+        
+        const [satsRes, stationsRes, missionsRes] = await Promise.all([
+          fetch('/api/back/satellites-operationnels'),
+          fetch('/api/back/stations-actives'),
+          fetch('/api/back/missions-actives')
         ]);
-        document.getElementById('satSelect').innerHTML = sats.map(s => '<option value="' + s.id_satellite + '">' + s.nom + '</option>').join('');
-        document.getElementById('winSatSelect').innerHTML = sats.map(s => '<option value="' + s.id_satellite + '">' + s.nom + '</option>').join('');
-        document.getElementById('stationSelect').innerHTML = stations.map(s => '<option value="' + s.id_station + '">' + s.nom + '</option>').join('');
+
+        if (!satsRes.ok || !stationsRes.ok || !missionsRes.ok) {
+          throw new Error('Erreur API: ' + [satsRes.status, stationsRes.status, missionsRes.status].join(', '));
+        }
+
+        const sats = await satsRes.json();
+        const stations = await stationsRes.json();
+        const missions = await missionsRes.json();
+
+        console.log('Satellites:', sats?.length || 0);
+        console.log('Stations:', stations?.length || 0);
+        console.log('Missions:', missions?.length || 0);
+
+        // Remplir les sélects
+        const satsHtml = (sats || []).map(s => '<option value="' + (s.id_satellite || s.ID_SATELLITE || '') + '">' + (s.nom || s.NOM || 'Sans nom') + '</option>').join('');
+        const stationsHtml = (stations || []).map(s => '<option value="' + (s.id_station || s.ID_STATION || '') + '">' + (s.nom || s.NOM || 'Sans nom') + '</option>').join('');
+        
+        document.getElementById('satSelect').innerHTML = satsHtml || '<option>Aucun satellite</option>';
+        document.getElementById('winSatSelect').innerHTML = satsHtml || '<option>Aucun satellite</option>';
+        document.getElementById('stationSelect').innerHTML = stationsHtml || '<option>Aucune station</option>';
+
+        if (sats.length === 0 || stations.length === 0) {
+          console.warn('Données vides reçues!');
+        }
       } catch (e) {
-        console.error('Erreur:', e);
+        console.error('Erreur loadBackofficeData:', e);
+        document.getElementById('satSelect').innerHTML = '<option>❌ Erreur</option>';
+        document.getElementById('winSatSelect').innerHTML = '<option>❌ Erreur</option>';
+        document.getElementById('stationSelect').innerHTML = '<option>❌ Erreur</option>';
       }
     }
 

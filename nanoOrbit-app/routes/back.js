@@ -114,14 +114,15 @@ router.post('/satellites/:id/deorbit', checkAuth, checkRole(['admin']), async (r
   }
 });
 
-// GET dropdown data pour les formulaires
+// GET dropdown data pour les formulaires - utilise pool par défaut (lecture)
 router.get('/satellites-operationnels', checkAuth, async (req, res) => {
   try {
     const db = await getUserConnection(req.session);
-    const [rows] = await db.query('SELECT id_satellite, nom FROM SATELLITE WHERE statut_operationnel = "Opérationnel"', []);
+    const [rows] = await db.query('SELECT id_satellite, nom FROM SATELLITE WHERE statut_operationnel IN ("Opérationnel", "operationnel", "OPERATIONNEL")', []);
     db.release();
-    res.json(rows);
+    res.json(rows || []);
   } catch (error) {
+    console.error('Erreur satellites-operationnels:', error.message);
     res.status(500).json({ error: error.message });
   }
 });
@@ -129,10 +130,11 @@ router.get('/satellites-operationnels', checkAuth, async (req, res) => {
 router.get('/stations-actives', checkAuth, async (req, res) => {
   try {
     const db = await getUserConnection(req.session);
-    const [rows] = await db.query('SELECT id_station, nom FROM STATION_SOL WHERE etat = "Active"', []);
+    const [rows] = await db.query('SELECT id_station, nom FROM STATION_SOL WHERE etat IN ("Active", "active", "ACTIVE")', []);
     db.release();
-    res.json(rows);
+    res.json(rows || []);
   } catch (error) {
+    console.error('Erreur stations-actives:', error.message);
     res.status(500).json({ error: error.message });
   }
 });
@@ -142,8 +144,9 @@ router.get('/missions-actives', checkAuth, async (req, res) => {
     const db = await getUserConnection(req.session);
     const [rows] = await db.query('SELECT id_mission, nom FROM MISSION WHERE date_fin IS NULL OR date_fin > NOW()', []);
     db.release();
-    res.json(rows);
+    res.json(rows || []);
   } catch (error) {
+    console.error('Erreur missions-actives:', error.message);
     res.status(500).json({ error: error.message });
   }
 });
