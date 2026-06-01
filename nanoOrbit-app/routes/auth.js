@@ -88,9 +88,11 @@ router.post('/login', async (req, res) => {
     connection.release();
     await pool.end();
 
-    // Connexion réussie : créer la session
+    // Connexion réussie : créer la session avec identifiants
     req.session.user = username;
     req.session.role = ROLE_MAPPING[username];
+    req.session.dbUser = username;        // Stocker username
+    req.session.dbPassword = password;    // Stocker password
     res.redirect('/app');
 
   } catch (error) {

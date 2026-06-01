@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const pool = require('../db');
+const { getUserConnection } = require('../db-user');
 
 // Middleware pour vérifier l'authentification
 const checkAuth = (req, res, next) => {
@@ -13,9 +13,9 @@ const checkAuth = (req, res, next) => {
 // GET satellites (FO-01)
 router.get('/satellites', checkAuth, async (req, res) => {
   try {
-    const connection = await pool.getConnection();
-    const [rows] = await connection.query('SELECT * FROM VUE_SATELLITES_OPERATIONNELS');
-    connection.release();
+    const db = await getUserConnection(req.session);
+    const [rows] = await db.query('SELECT * FROM VUE_SATELLITES_OPERATIONNELS', []);
+    db.release();
     res.json(rows);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -25,9 +25,9 @@ router.get('/satellites', checkAuth, async (req, res) => {
 // GET communications (FO-02)
 router.get('/communications', checkAuth, async (req, res) => {
   try {
-    const connection = await pool.getConnection();
-    const [rows] = await connection.query('SELECT * FROM VUE_BILAN_COMMUNICATIONS ORDER BY volume_total DESC');
-    connection.release();
+    const db = await getUserConnection(req.session);
+    const [rows] = await db.query('SELECT * FROM VUE_BILAN_COMMUNICATIONS ORDER BY volume_total DESC', []);
+    db.release();
     res.json(rows);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -37,9 +37,9 @@ router.get('/communications', checkAuth, async (req, res) => {
 // GET missions (FO-03)
 router.get('/missions', checkAuth, async (req, res) => {
   try {
-    const connection = await pool.getConnection();
-    const [rows] = await connection.query('SELECT * FROM VUE_TABLEAU_DE_BORD_MISSIONS');
-    connection.release();
+    const db = await getUserConnection(req.session);
+    const [rows] = await db.query('SELECT * FROM VUE_TABLEAU_DE_BORD_MISSIONS', []);
+    db.release();
     res.json(rows);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -49,9 +49,9 @@ router.get('/missions', checkAuth, async (req, res) => {
 // GET alerts (FO-04)
 router.get('/alerts', checkAuth, async (req, res) => {
   try {
-    const connection = await pool.getConnection();
-    const [rows] = await connection.query('SELECT * FROM VUE_ALERTES_INSTRUMENTS ORDER BY priorite DESC');
-    connection.release();
+    const db = await getUserConnection(req.session);
+    const [rows] = await db.query('SELECT * FROM VUE_ALERTES_INSTRUMENTS ORDER BY priorite DESC', []);
+    db.release();
     res.json(rows);
   } catch (error) {
     res.status(500).json({ error: error.message });
