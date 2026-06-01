@@ -37,13 +37,6 @@ router.get('/login', (req, res) => {
           <input type="password" name="password" placeholder="Mot de passe" required>
           <button type="submit">Connexion</button>
         </form>
-        <div class="hint">
-          <strong>Comptes de test :</strong><br>
-          analyste_data / Analyste123!<br>
-          operateur_sat / Operateur123!<br>
-          resp_mission / Mission123!<br>
-          admin_nano / Admin123!
-        </div>
       </div>
     </body>
     </html>
