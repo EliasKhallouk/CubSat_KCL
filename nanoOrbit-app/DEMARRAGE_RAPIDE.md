@@ -33,7 +33,7 @@ Ouvrez votre navigateur: **http://localhost:3000/api/auth/login**
 
 | Compte | Mot de passe | Accès |
 |--------|---|---|
-| `analysite_data` | `Analyste123!` | Front-office seulement |
+| `analyste_data` | `Analyste123!` | Front-office seulement |
 | `operateur_sat` | `Operateur123!` | Front + Back (satellites) |
 | `resp_mission` | `Mission123!` | Front + Back (missions) |
 | `admin_nano` | `Admin123!` | Accès complet |
