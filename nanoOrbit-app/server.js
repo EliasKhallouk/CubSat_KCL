@@ -123,6 +123,7 @@ app.get('/app', (req, res) => {
     <div id="backoffice" class="section">
       <h2>⚙️ Administration (Back-office)</h2>
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px;">
+        ${['operateur', 'admin'].includes(role) ? `
         <div class="box">
           <h3>Modifier le statut d'un satellite</h3>
           <form onsubmit="updateSatelliteStatus(event)">
@@ -133,9 +134,9 @@ app.get('/app', (req, res) => {
             <div class="form-group">
               <label>Nouveau statut:</label>
               <select id="statusSelect" required>
-                <option value="Opérationnel">Opérationnel</option>
-                <option value="En veille">En veille</option>
-                <option value="Désorbité">Désorbité</option>
+                <option value="ACTIF">Actif</option>
+                <option value="INACTIF">Inactif</option>
+                <option value="HS">Hors service</option>
               </select>
             </div>
             <button type="submit">Mettre à jour</button>
@@ -170,6 +171,33 @@ app.get('/app', (req, res) => {
           </form>
           <div id="windowMessage"></div>
         </div>
+        ` : ''}
+
+        ${['responsable', 'admin'].includes(role) ? `
+        <div class="box">
+          <h3>Assigner un satellite à une mission</h3>
+          <form onsubmit="createParticipation(event)">
+            <div class="form-group">
+              <label>Satellite:</label>
+              <select id="partSatSelect" required><option>Chargement...</option></select>
+            </div>
+            <div class="form-group">
+              <label>Mission:</label>
+              <select id="missionSelect" required><option>Chargement...</option></select>
+            </div>
+            <div class="form-group">
+              <label>Rôle du satellite:</label>
+              <input type="text" id="roleSatellite" placeholder="Ex: Principal, Support..." required>
+            </div>
+            <button type="submit">Assigner</button>
+          </form>
+          <div id="participationMessage"></div>
+        </div>
+        ` : ''}
+
+        ${role === 'analyste' ? `
+        <div class="box"><p style="color:#666; padding: 20px;">Accès lecture seule — aucune action d'administration disponible.</p></div>
+        ` : ''}
       </div>
     </div>
   </div>
@@ -266,22 +294,17 @@ app.get('/app', (req, res) => {
         console.log('Stations:', stations?.length || 0);
         console.log('Missions:', missions?.length || 0);
 
-        // Remplir les sélects
-        const satsHtml = (sats || []).map(s => '<option value="' + (s.id_satellite || s.ID_SATELLITE || '') + '">' + (s.nom || s.NOM || 'Sans nom') + '</option>').join('');
-        const stationsHtml = (stations || []).map(s => '<option value="' + (s.id_station || s.ID_STATION || '') + '">' + (s.nom || s.NOM || 'Sans nom') + '</option>').join('');
-        
-        document.getElementById('satSelect').innerHTML = satsHtml || '<option>Aucun satellite</option>';
-        document.getElementById('winSatSelect').innerHTML = satsHtml || '<option>Aucun satellite</option>';
-        document.getElementById('stationSelect').innerHTML = stationsHtml || '<option>Aucune station</option>';
+        const satsHtml = (sats || []).map(s => '<option value="' + s.id_satellite + '">' + s.nom + '</option>').join('');
+        const stationsHtml = (stations || []).map(s => '<option value="' + s.id_station + '">' + s.nom + '</option>').join('');
+        const missionsHtml = (missions || []).map(m => '<option value="' + m.id_mission + '">' + m.nom + '</option>').join('');
 
-        if (sats.length === 0 || stations.length === 0) {
-          console.warn('Données vides reçues!');
-        }
+        if (document.getElementById('satSelect')) document.getElementById('satSelect').innerHTML = satsHtml || '<option>Aucun satellite</option>';
+        if (document.getElementById('winSatSelect')) document.getElementById('winSatSelect').innerHTML = satsHtml || '<option>Aucun satellite</option>';
+        if (document.getElementById('stationSelect')) document.getElementById('stationSelect').innerHTML = stationsHtml || '<option>Aucune station</option>';
+        if (document.getElementById('partSatSelect')) document.getElementById('partSatSelect').innerHTML = satsHtml || '<option>Aucun satellite</option>';
+        if (document.getElementById('missionSelect')) document.getElementById('missionSelect').innerHTML = missionsHtml || '<option>Aucune mission</option>';
       } catch (e) {
         console.error('Erreur loadBackofficeData:', e);
-        document.getElementById('satSelect').innerHTML = '<option>❌ Erreur</option>';
-        document.getElementById('winSatSelect').innerHTML = '<option>❌ Erreur</option>';
-        document.getElementById('stationSelect').innerHTML = '<option>❌ Erreur</option>';
       }
     }
 
@@ -315,6 +338,23 @@ app.get('/app', (req, res) => {
       });
       const result = await res.json();
       const msgDiv = document.getElementById('windowMessage');
+      msgDiv.className = 'message ' + (res.ok ? 'success' : 'error');
+      msgDiv.innerHTML = result.message || result.error;
+    }
+
+    async function createParticipation(e) {
+      e.preventDefault();
+      const res = await fetch('/api/back/participations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id_satellite: document.getElementById('partSatSelect').value,
+          id_mission: document.getElementById('missionSelect').value,
+          role_satellite: document.getElementById('roleSatellite').value
+        })
+      });
+      const result = await res.json();
+      const msgDiv = document.getElementById('participationMessage');
       msgDiv.className = 'message ' + (res.ok ? 'success' : 'error');
       msgDiv.innerHTML = result.message || result.error;
     }
