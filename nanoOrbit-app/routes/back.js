@@ -32,7 +32,7 @@ router.post('/satellites/:id/statut', checkAuth, checkRole(['operateur', 'admin'
 
     const db = await getUserConnection(req.session);
     await db.query('UPDATE SATELLITE SET statut_operationnel = ? WHERE id_satellite = ?', [statut, id]);
-    db.release();
+    await db.release();
     
     res.json({ success: true, message: `Satellite ${id} mis à jour: ${statut}` });
   } catch (error) {
@@ -54,7 +54,7 @@ router.post('/fenetres', checkAuth, checkRole(['operateur', 'admin']), async (re
       'INSERT INTO FENETRE_COM (id_satellite, id_station, date_debut, duree, elevation_max, statut) VALUES (?, ?, ?, ?, ?, ?)',
       [id_satellite, id_station, date_debut, duree, elevation_max, 'Planifiée']
     );
-    db.release();
+    await db.release();
     
     res.json({ success: true, message: 'Fenêtre de communication créée' });
   } catch (error) {
@@ -72,7 +72,7 @@ router.post('/participations', checkAuth, checkRole(['responsable', 'admin']), a
     // Vérifier que la mission n'est pas terminée
     const [missions] = await db.query('SELECT date_fin FROM MISSION WHERE id_mission = ?', [id_mission]);
     if (missions[0] && missions[0].date_fin && new Date(missions[0].date_fin) < new Date()) {
-      db.release();
+      await db.release();
       return res.status(400).json({ error: 'Mission terminée' });
     }
     
@@ -83,7 +83,7 @@ router.post('/participations', checkAuth, checkRole(['responsable', 'admin']), a
     );
     
     if (existing.length > 0) {
-      db.release();
+      await db.release();
       return res.status(400).json({ error: 'Satellite déjà assigné à cette mission' });
     }
     
@@ -91,7 +91,7 @@ router.post('/participations', checkAuth, checkRole(['responsable', 'admin']), a
       'INSERT INTO PARTICIPATION (id_satellite, id_mission, role_satellite) VALUES (?, ?, ?)',
       [id_satellite, id_mission, role_satellite]
     );
-    db.release();
+    await db.release();
     
     res.json({ success: true, message: 'Satellite assigné à la mission' });
   } catch (error) {
@@ -106,7 +106,7 @@ router.post('/satellites/:id/deorbit', checkAuth, checkRole(['admin']), async (r
     
     const db = await getUserConnection(req.session);
     await db.query('UPDATE SATELLITE SET statut_operationnel = ? WHERE id_satellite = ?', ['Désorbité', id]);
-    db.release();
+    await db.release();
     
     res.json({ success: true, message: `Satellite ${id} désorbité` });
   } catch (error) {
@@ -119,7 +119,7 @@ router.get('/satellites-operationnels', checkAuth, async (req, res) => {
   try {
     const db = await getUserConnection(req.session);
     const [rows] = await db.query('SELECT id_satellite, nom FROM SATELLITE WHERE statut_operationnel IN ("Opérationnel", "operationnel", "OPERATIONNEL")', []);
-    db.release();
+    await db.release();
     res.json(rows || []);
   } catch (error) {
     console.error('Erreur satellites-operationnels:', error.message);
@@ -131,7 +131,7 @@ router.get('/stations-actives', checkAuth, async (req, res) => {
   try {
     const db = await getUserConnection(req.session);
     const [rows] = await db.query('SELECT id_station, nom FROM STATION_SOL WHERE etat IN ("Active", "active", "ACTIVE")', []);
-    db.release();
+    await db.release();
     res.json(rows || []);
   } catch (error) {
     console.error('Erreur stations-actives:', error.message);
@@ -143,7 +143,7 @@ router.get('/missions-actives', checkAuth, async (req, res) => {
   try {
     const db = await getUserConnection(req.session);
     const [rows] = await db.query('SELECT id_mission, nom FROM MISSION WHERE date_fin IS NULL OR date_fin > NOW()', []);
-    db.release();
+    await db.release();
     res.json(rows || []);
   } catch (error) {
     console.error('Erreur missions-actives:', error.message);

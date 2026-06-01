@@ -25,12 +25,10 @@ async function getUserConnection(session) {
   
   // Retourner un objet qui contient la connexion et le pool pour pouvoir les fermer
   return {
-    connection: connection,
-    pool: pool,
-    query: (sql, values) => connection.query(sql, values),
-    release: () => {
+    query: async (sql, values) => connection.query(sql, values),
+    release: async () => {
       connection.release();
-      pool.end();
+      await pool.end();
     }
   };
 }

@@ -15,7 +15,7 @@ router.get('/satellites', checkAuth, async (req, res) => {
   try {
     const db = await getUserConnection(req.session);
     const [rows] = await db.query('SELECT * FROM VUE_SATELLITES_OPERATIONNELS', []);
-    db.release();
+    await db.release();
     res.json(rows);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -27,7 +27,7 @@ router.get('/communications', checkAuth, async (req, res) => {
   try {
     const db = await getUserConnection(req.session);
     const [rows] = await db.query('SELECT * FROM VUE_BILAN_COMMUNICATIONS ORDER BY volume_total DESC', []);
-    db.release();
+    await db.release();
     res.json(rows);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -39,7 +39,7 @@ router.get('/missions', checkAuth, async (req, res) => {
   try {
     const db = await getUserConnection(req.session);
     const [rows] = await db.query('SELECT * FROM VUE_TABLEAU_DE_BORD_MISSIONS', []);
-    db.release();
+    await db.release();
     res.json(rows);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -51,7 +51,7 @@ router.get('/alerts', checkAuth, async (req, res) => {
   try {
     const db = await getUserConnection(req.session);
     const [rows] = await db.query('SELECT * FROM VUE_ALERTES_INSTRUMENTS ORDER BY priorite DESC', []);
-    db.release();
+    await db.release();
     res.json(rows);
   } catch (error) {
     res.status(500).json({ error: error.message });
