@@ -3,12 +3,12 @@ const router = express.Router();
 const mysql = require('mysql2/promise');
 require('dotenv').config();
 
-// Comptes applicatifs (Option B)
-const USERS = {
-  'analyste_data': { password: 'Analyste123!', role: 'analyste' },
-  'operateur_sat': { password: 'Operateur123!', role: 'operateur' },
-  'resp_mission': { password: 'Mission123!', role: 'responsable' },
-  'admin_nano': { password: 'Admin123!', role: 'admin' },
+// Mapping des profils utilisateurs MySQL
+const ROLE_MAPPING = {
+  'analyste_data': 'analyste',
+  'operateur_sat': 'operateur',
+  'resp_mission': 'responsable',
+  'admin_nano': 'admin',
 };
 
 // GET login page
@@ -50,16 +50,59 @@ router.get('/login', (req, res) => {
   `);
 });
 
-// POST login
-router.post('/login', (req, res) => {
+// POST login - Option A : Authentification MySQL réelle
+router.post('/login', async (req, res) => {
   const { username, password } = req.body;
 
-  if (USERS[username] && USERS[username].password === password) {
+  // Vérifier que le compte existe dans notre mapping
+  if (!ROLE_MAPPING[username]) {
+    return res.send(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Erreur de connexion</title>
+        <style>
+          body { font-family: Arial; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background: #f5f5f5; }
+          .box { background: white; padding: 40px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); text-align: center; }
+          .error { color: red; margin-bottom: 20px; }
+          a { color: #007bff; text-decoration: none; }
+        </style>
+      </head>
+      <body>
+        <div class="box">
+          <p class="error">❌ Identifiants incorrects</p>
+          <a href="/api/auth/login">← Retour</a>
+        </div>
+      </body>
+      </html>
+    `);
+  }
+
+  try {
+    // Essayer de se connecter à MariaDB avec les identifiants fournis
+    const pool = mysql.createPool({
+      host: process.env.DB_HOST,
+      user: username,
+      password: password,
+      database: process.env.DB_NAME,
+      waitForConnections: true,
+      connectionLimit: 1,
+      queueLimit: 0
+    });
+
+    const connection = await pool.getConnection();
+    await connection.query('SELECT 1');
+    connection.release();
+    await pool.end();
+
+    // Connexion réussie : créer la session
     req.session.user = username;
-    req.session.role = USERS[username].role;
+    req.session.role = ROLE_MAPPING[username];
     res.redirect('/app');
-  } else {
-    res.send(`
+
+  } catch (error) {
+    // Identifiants incorrects ou erreur de connexion
+    return res.send(`
       <!DOCTYPE html>
       <html>
       <head>
